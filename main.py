@@ -1,15 +1,17 @@
-
+from dotenv import load_dotenv
+import os
+import json
 import token
 from flask import Flask, jsonify, redirect,request,session
 import urllib
 import requests
 import time
 myApp = Flask(__name__)
-
-myApp.secret_key = "910532de-c910532"#for sessions
+load_dotenv()
+myApp.secret_key = os.getenv("SECRET_KEY")#for sessions
 #import constants including app information and important urls and uri
-CLIENT_ID = "b473227692a846f88be8a3042028b9ea"
-CLIENT_SECRET ="e394a2a96fe74009b0b1e37a8dcc6a35"
+CLIENT_ID = os.getenv("CLIENT_ID")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 REDIRECT_URI = 'http://localhost:5000/callback'
 AUTH_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -22,9 +24,18 @@ scopeDict = {"Images":["ugc-image-upload"],"Spotify Connect":["user-read-playbac
               ,"user-top-read","user-read-recently-played"],"Library":["user-library-modify",
               "user-library-read"],"Users":["user-read-email","user-read-private"],"Open Access":["user-soa-link",
               "user-soa-unlink","soa-manage-entitlements","soa-manage-partner","soa-create-partner"]}
-#testing function
-def helloWorld():
-    return "Hello World!"
+
+
+def get_headers(sessionToken):
+    headers = {
+        "Authorization" : f"Bearer {sessionToken}"
+    }
+    return headers
+def validation():
+    if 'access_token' not in session:
+        return redirect('/login')
+    if int(time.time()) > session['expires_at']:
+        return redirect('refresh_token')
 
 #index page the page you enter in at first
 @myApp.route("/")
@@ -33,7 +44,7 @@ def index():
 #login page redirects to the spotify login
 @myApp.route("/login")
 def login():
-    scope = f"{scopeDict['Users'][0]} {scopeDict['Users'][1]}"#scope for what you want to access
+    scope = f"{scopeDict['Users'][0]} {scopeDict['Users'][1]} {scopeDict['Spotify Connect'][2]} {scopeDict['Spotify Connect'][0]}"#scope for what you want to access
 
     params = {#important to get the correct access token
         'client_id':CLIENT_ID,#match it with the spotify app
@@ -71,12 +82,29 @@ def get_playlists():#now unpack what we got
     if int(time.time()) > session['expires_at']:#make sure the token hasnt expired
         return redirect('/refresh_token')#if it has redirect
     #new header to send to spotify to get the info    
-    headers = {
-        "Authorization" : f"Bearer {session['access_token']}"
-    }
+    headers = get_headers(session['access_token'])
     response = requests.get(API_BASE_URL+"me/playlists",headers=headers)#get the json with the playlists
     playlists = response.json()#get the information about the playlists
     return jsonify(playlists)#display the json file
+
+@myApp.route('/player')
+def my_player():
+    if 'access_token' not in session:#make sure we actually have the accesstoken
+        return redirect('/login')#if not redirect to login
+    if int(time.time()) > session['expires_at']:#make sure the token hasnt expired
+        return redirect('/refresh_token')#if it has redirect
+    headers = get_headers(session['access_token'])
+    url = f"{API_BASE_URL}me/player/currently-playing"
+    response = requests.get(url=url,headers=headers)
+    currently_playing = response.json()
+    returnString = f"""
+                    Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}
+                    <img src='{currently_playing['item']['album']['images'][0]['url']}'>
+                    """
+    return returnString
+    #currently_playing['item']['album']['images'][0]['url']
+    #{currently_playing['item']['artists'][0]['name']}
+    #{currently_playing['item']['name']}
 
 
 @myApp.route("/refresh_token")
@@ -96,7 +124,6 @@ def get_refresh_token():
         new_token_info = response.json()
         session['access_token'] = new_token_info['access_token']
         session['expires_at'] = int(time.time()) + new_token_info['expires_in']
-
         return redirect("/playlists")
 
     
