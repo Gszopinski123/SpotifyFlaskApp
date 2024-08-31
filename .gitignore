@@ -1,0 +1,6 @@
+#enviroment file
+*.env
+#text files
+*.txt
+#excel file
+*.xlsx
