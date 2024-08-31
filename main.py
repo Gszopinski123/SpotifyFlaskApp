@@ -1,3 +1,5 @@
+from email import header
+from wsgiref.headers import Headers
 from dotenv import load_dotenv
 import os
 import json
@@ -44,7 +46,7 @@ def index():
 #login page redirects to the spotify login
 @myApp.route("/login")
 def login():
-    scope = f"{scopeDict['Users'][0]} {scopeDict['Users'][1]} {scopeDict['Spotify Connect'][2]} {scopeDict['Spotify Connect'][0]}"#scope for what you want to access
+    scope = f"{scopeDict['Users'][0]} {scopeDict['Users'][1]} {scopeDict['Spotify Connect'][2]} {scopeDict['Spotify Connect'][0]} {scopeDict['Spotify Connect'][1]}"#scope for what you want to access
 
     params = {#important to get the correct access token
         'client_id':CLIENT_ID,#match it with the spotify app
@@ -99,7 +101,7 @@ def my_player():
     currently_playing = response.json()
     returnString = f"""
                     Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}
-                    <img src='{currently_playing['item']['album']['images'][0]['url']}'>
+                    <img src='{currently_playing['item']['album']['images'][0]['url']}'><a href='/skip'>Skip</a>
                     """
     return returnString
     #currently_playing['item']['album']['images'][0]['url']
@@ -126,7 +128,14 @@ def get_refresh_token():
         session['expires_at'] = int(time.time()) + new_token_info['expires_in']
         return redirect("/playlists")
 
-    
+
+
+@myApp.route('/skip')#this page is used to skip to the next song - Spotify Premium required
+def skip_Song():
+    url = f"{API_BASE_URL}me/player/next"
+    headers = get_headers(session['access_token'])
+    response = requests.post(url=url,headers=headers)
+    return redirect("/player")
 
 if __name__ == "__main__":
     myApp.run(host="0.0.0.0",debug=True)
