@@ -1,5 +1,3 @@
-from email import header
-from wsgiref.headers import Headers
 from dotenv import load_dotenv
 import os
 import json
@@ -18,7 +16,7 @@ REDIRECT_URI = 'http://localhost:5000/callback'
 AUTH_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
 API_BASE_URL = "https://api.spotify.com/v1/"
-#will help later when I need different scope priviledges dont want to have to change all the time
+#will help later when I need different scope privileges dont want to have to change all the time
 scopeDict = {"Images":["ugc-image-upload"],"Spotify Connect":["user-read-playback-state","user-modify-playback-state",
               "user-read-currently-playing"],"Playback":["app-remote-control","streaming"],"Playlists":["playlist-read-private",
               "playlist-read-collaborative","playlist-modify-private","playlist-modify-public"]
@@ -100,10 +98,11 @@ def my_player():
     response = requests.get(url=url,headers=headers)
     currently_playing = response.json()
     returnString = f"""
-                    Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}
-                    <img src='{currently_playing['item']['album']['images'][0]['url']}'><a href='/skip'>Skip</a>
+                    Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
+                    <a href='/previous'>Prev</a>  <a href='/skip'>Skip</a>
                     """
     return returnString
+    #<img src='{currently_playing['item']['album']['images'][0]['url']}'>
     #currently_playing['item']['album']['images'][0]['url']
     #{currently_playing['item']['artists'][0]['name']}
     #{currently_playing['item']['name']}
@@ -128,6 +127,12 @@ def get_refresh_token():
         session['expires_at'] = int(time.time()) + new_token_info['expires_in']
         return redirect("/playlists")
 
+@myApp.route('/previous')#this page is used to go back to the previous song - Spotify Premium required
+def previous_Song():
+    url = f"{API_BASE_URL}me/player/previous"
+    headers = get_headers(session['access_token'])
+    response = requests.post(url=url,headers=headers)
+    return redirect("/player")
 
 
 @myApp.route('/skip')#this page is used to skip to the next song - Spotify Premium required
