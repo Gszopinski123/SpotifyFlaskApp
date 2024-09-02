@@ -1,3 +1,4 @@
+from email import header
 from dotenv import load_dotenv
 import os
 import json
@@ -97,15 +98,40 @@ def my_player():
     url = f"{API_BASE_URL}me/player/currently-playing"
     response = requests.get(url=url,headers=headers)
     currently_playing = response.json()
+    deviceUrl = f"{API_BASE_URL}me/player/devices"
+    deviceResponse = requests.get(url=deviceUrl,headers=get_headers(session['access_token']))
+    deviceJson = deviceResponse.json()
+    deviceId = deviceJson['devices'][0]['id']
+    playbackStateUrl = f"{API_BASE_URL}me/player"
+    playbackStateResponse = requests.get(url=playbackStateUrl,headers=get_headers(session['access_token']))
+    playbackStateJson = playbackStateResponse.json()
+    if (playbackStateJson['is_playing']):
+        playOrPause = "<a href='/pause'>Pause</a>"
+    else:
+        playOrPause = "<a href='/play'>Play</a>"
     returnString = f"""
                     Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
-                    <a href='/previous'>Prev</a>  <a href='/skip'>Skip</a>
+                    <a href='/previous'>Prev</a> {playOrPause} <a href='/skip'>Skip</a>
                     """
     return returnString
     #<img src='{currently_playing['item']['album']['images'][0]['url']}'>
     #currently_playing['item']['album']['images'][0]['url']
     #{currently_playing['item']['artists'][0]['name']}
     #{currently_playing['item']['name']}
+
+
+@myApp.route('/play')
+def start_play():
+    url = f"{API_BASE_URL}me/player/play"
+    playResponse = requests.put(url=url, headers=get_headers(session['access_token']))
+    return redirect("/player")
+
+
+@myApp.route('/pause')
+def pause():
+    url = f"{API_BASE_URL}me/player/pause"
+    playResponse = requests.put(url=url, headers=get_headers(session['access_token']))
+    return redirect("/player")
 
 
 @myApp.route("/refresh_token")
