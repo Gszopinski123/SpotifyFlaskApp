@@ -1,4 +1,6 @@
 from email import header
+from fileinput import filename
+from turtle import title
 from dotenv import load_dotenv
 import os
 import json
@@ -7,6 +9,7 @@ from flask import Flask, jsonify, redirect,request,session
 import urllib
 import requests
 import time
+from openpyxl import Workbook, load_workbook
 myApp = Flask(__name__)
 load_dotenv()
 myApp.secret_key = os.getenv("SECRET_KEY")#for sessions
@@ -86,7 +89,16 @@ def get_playlists():#now unpack what we got
     headers = get_headers(session['access_token'])
     response = requests.get(API_BASE_URL+"me/playlists",headers=headers)#get the json with the playlists
     playlists = response.json()#get the information about the playlists
-    return jsonify(playlists)#display the json file
+    playlistNames = [(x['name'],x['id']) for x in playlists['items']]
+    if os.path.exists("spotifyPlaylistData.xlsx"):
+        workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
+        print(f"{workbook[f'{playlistNames[0][1]}']['A1'].value}")
+    else:
+        workbook = Workbook()
+        for y,z in playlistNames:
+            workbook.create_sheet(title=f"{z}")
+        workbook.save(filename="./spotifyPlaylistData.xlsx")
+    return f"{playlistNames}"#display the json file
 
 @myApp.route('/player')
 def my_player():
