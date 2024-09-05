@@ -93,10 +93,10 @@ def get_playlists():#now unpack what we got
     playlistResponse = requests.get(API_BASE_URL+f"playlists/{playlistNames[0][1]}/tracks",headers=headers)
     playlistData = playlistResponse.json()
     print(playlistData['items'])##added this feature to check to see if contributions are working!
-    if os.path.exists("spotifyPlaylistData.xlsx"):
+    if os.path.exists("spotifyPlaylistData.xlsx"):#this will be used to make sure we dont override our data in the excel fike
         workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
     else:
-        workbook = Workbook()
+        workbook = Workbook()#make the excel document with the sheet names as the ids of the playlist for easy tracking!
         for y,z in playlistNames:
             workbook.create_sheet(title=f"{z}")
         workbook.save(filename="./spotifyPlaylistData.xlsx")
