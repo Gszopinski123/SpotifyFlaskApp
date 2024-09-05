@@ -48,7 +48,7 @@ def index():
 #login page redirects to the spotify login
 @myApp.route("/login")
 def login():
-    scope = f"{scopeDict['Users'][0]} {scopeDict['Users'][1]} {scopeDict['Spotify Connect'][2]} {scopeDict['Spotify Connect'][0]} {scopeDict['Spotify Connect'][1]}"#scope for what you want to access
+    scope = f"{scopeDict['Users'][0]} {scopeDict['Users'][1]} {scopeDict['Spotify Connect'][2]} {scopeDict['Spotify Connect'][0]} {scopeDict['Spotify Connect'][1]} {scopeDict['Playlists'][0]}"#scope for what you want to access
 
     params = {#important to get the correct access token
         'client_id':CLIENT_ID,#match it with the spotify app
@@ -90,15 +90,17 @@ def get_playlists():#now unpack what we got
     response = requests.get(API_BASE_URL+"me/playlists",headers=headers)#get the json with the playlists
     playlists = response.json()#get the information about the playlists
     playlistNames = [(x['name'],x['id']) for x in playlists['items']]
+    playlistResponse = requests.get(API_BASE_URL+f"playlists/{playlistNames[0][1]}/tracks",headers=headers)
+    playlistData = playlistResponse.json()
+    print(playlistData['items'])
     if os.path.exists("spotifyPlaylistData.xlsx"):
         workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
-        print(f"{workbook[f'{playlistNames[0][1]}']['A1'].value}")
     else:
         workbook = Workbook()
         for y,z in playlistNames:
             workbook.create_sheet(title=f"{z}")
         workbook.save(filename="./spotifyPlaylistData.xlsx")
-    return f"{playlistNames}"#display the json file
+    return f"{playlistData['items'][0]['track']['name']}"#display the json file
 
 @myApp.route('/player')
 def my_player():
