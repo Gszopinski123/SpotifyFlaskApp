@@ -181,6 +181,12 @@ def skip_Song():
     headers = get_headers(session['access_token'])
     response = requests.post(url=url,headers=headers)
     return redirect("/player")
+#things to add data analytics based on previous skips
+#make sure we do not make the excel file over and over 
+#make the home screen a lot better
+#add a way to login in with other uses and make the overall app better
+
+
 
 if __name__ == "__main__":
     myApp.run(host="0.0.0.0",debug=True)
