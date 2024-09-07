@@ -7,6 +7,7 @@ import json
 import token
 from flask import Flask, jsonify, redirect,request,session
 import urllib
+from numpy import number
 import requests
 import time
 from openpyxl import Workbook, load_workbook
@@ -89,10 +90,21 @@ def get_playlists():#now unpack what we got
     headers = get_headers(session['access_token'])
     response = requests.get(API_BASE_URL+"me/playlists",headers=headers)#get the json with the playlists
     playlists = response.json()#get the information about the playlists
-    playlistNames = [(x['name'],x['id']) for x in playlists['items']]
-    playlistResponse = requests.get(API_BASE_URL+f"playlists/{playlistNames[0][1]}/tracks",headers=headers)
-    playlistData = playlistResponse.json()
-    print(playlistData['items'])##added this feature to check to see if contributions are working!
+    playlistNames = [(x['name'],x['id'],x,x['tracks']['total']) for x in playlists['items']]
+    listOfSongs = []
+    finalList = []
+    for x in playlistNames:
+
+        integerDivison = x[3]//100+1
+        for k in range(integerDivison):
+            playlistResponse = requests.get(API_BASE_URL+f"playlists/{x[1]}/tracks?offset={100*k}&limit=100",headers=headers)
+            playlistData = playlistResponse.json()
+            for y in playlistData['items']:
+                listOfSongs += [y['track']['name']]
+        finalList += listOfSongs
+    print(finalList)
+    
+    #print(playlistData['items'])##added this feature to check to see if contributions are working!
     if os.path.exists("spotifyPlaylistData.xlsx"):#this will be used to make sure we dont override our data in the excel fike
         workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
     else:
