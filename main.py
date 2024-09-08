@@ -128,25 +128,26 @@ def my_player():
         return redirect('/login')#if not redirect to login
     if int(time.time()) > session['expires_at']:#make sure the token hasnt expired
         return redirect('/refresh_token')#if it has redirect
-    headers = get_headers(session['access_token'])
-    url = f"{API_BASE_URL}me/player/currently-playing"
-    response = requests.get(url=url,headers=headers)
-    currently_playing = response.json()
-    deviceUrl = f"{API_BASE_URL}me/player/devices"
-    deviceResponse = requests.get(url=deviceUrl,headers=get_headers(session['access_token']))
-    deviceJson = deviceResponse.json()
-    deviceId = deviceJson['devices'][0]['id']
     playbackStateUrl = f"{API_BASE_URL}me/player"
     playbackStateResponse = requests.get(url=playbackStateUrl,headers=get_headers(session['access_token']))
     playbackStateJson = playbackStateResponse.json()
-    if (playbackStateJson['is_playing']):
+    if playbackStateJson['is_playing']:
+        headers = get_headers(session['access_token'])
+        url = f"{API_BASE_URL}me/player/currently-playing"
+        response = requests.get(url=url,headers=headers)
+        currently_playing = response.json()
+        deviceUrl = f"{API_BASE_URL}me/player/devices"
+        deviceResponse = requests.get(url=deviceUrl,headers=get_headers(session['access_token']))
+        deviceJson = deviceResponse.json()
+        deviceId = deviceJson['devices'][0]['id']
         playOrPause = "<a href='/pause'>Pause</a>"
+        returnString = f"""
+                    Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
+                    <a href='/previous'>Prev</a> {playOrPause} <a href='/skip'>Skip</a>"""
     else:
         playOrPause = "<a href='/play'>Play</a>"
-    returnString = f"""
-                    Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
-                    <a href='/previous'>Prev</a> {playOrPause} <a href='/skip'>Skip</a>
-                    """
+        returnString = f"Music Currently not playing! {playOrPause}"
+                    
     return returnString
     #<img src='{currently_playing['item']['album']['images'][0]['url']}'>
     #currently_playing['item']['album']['images'][0]['url']
