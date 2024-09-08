@@ -1,6 +1,7 @@
 from email import header
 from fileinput import filename
 from turtle import title
+from weakref import finalize
 from dotenv import load_dotenv
 import os
 import json
@@ -90,29 +91,36 @@ def get_playlists():#now unpack what we got
     headers = get_headers(session['access_token'])
     response = requests.get(API_BASE_URL+"me/playlists",headers=headers)#get the json with the playlists
     playlists = response.json()#get the information about the playlists
-    playlistNames = [(x['name'],x['id'],x,x['tracks']['total']) for x in playlists['items']]
+    playlistNames = [[x['name'],x['id'],x,x['tracks']['total']] for x in playlists['items']]
     listOfSongs = []
-    finalList = []
-    for x in playlistNames:
-
-        integerDivison = x[3]//100+1
-        for k in range(integerDivison):
-            playlistResponse = requests.get(API_BASE_URL+f"playlists/{x[1]}/tracks?offset={100*k}&limit=100",headers=headers)
-            playlistData = playlistResponse.json()
-            for y in playlistData['items']:
-                listOfSongs += [y['track']['name']]
-        finalList += listOfSongs
-    print(finalList)
+    if not os.path.exists("spotifyPlaylistData.xlsx"):
+        for x in playlistNames:
+            integerDivison = x[3]//100+1
+            for k in range(integerDivison):
+                playlistResponse = requests.get(API_BASE_URL+f"playlists/{x[1]}/tracks?offset={100*k}&limit=100",headers=headers)
+                playlistData = playlistResponse.json()
+                for y in playlistData['items']:
+                    listOfSongs.append(y['track']['name'])
+            x.append(listOfSongs)
+            listOfSongs = []
     
     #print(playlistData['items'])##added this feature to check to see if contributions are working!
     if os.path.exists("spotifyPlaylistData.xlsx"):#this will be used to make sure we dont override our data in the excel fike
         workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
     else:
         workbook = Workbook()#make the excel document with the sheet names as the ids of the playlist for easy tracking!
-        for y,z in playlistNames:
-            workbook.create_sheet(title=f"{z}")
+        for z in playlistNames:
+            workbook.create_sheet(title=f"{z[1]}")
+        
+                #workbook[f'{playlistNames[x][1]}'][f'A{z+1}'] = finalList[x][z]
+        # -> sheet name
+        for y in range(len(playlistNames)):
+            for z in range(len(playlistNames[y][4])):
+                workbook[f'{playlistNames[y][1]}'][f'A{z+1}'] = playlistNames[y][4][z]
+        
         workbook.save(filename="./spotifyPlaylistData.xlsx")
-    return f"{playlistData['items'][0]['track']['name']}"#display the json file
+
+    return redirect("/player")#display the json file
 
 @myApp.route('/player')
 def my_player():
