@@ -1,3 +1,4 @@
+from codecs import replace_errors
 from email import header
 from fileinput import filename
 from turtle import title
@@ -111,12 +112,16 @@ def get_playlists():#now unpack what we got
         workbook = Workbook()#make the excel document with the sheet names as the ids of the playlist for easy tracking!
         for z in playlistNames:
             workbook.create_sheet(title=f"{z[1]}")
+            for i in range(2):
+                workbook[f'{z[1]}']['A1'] = 'Name'
+                workbook[f'{z[1]}']['B1'] = 'Score'
         
                 #workbook[f'{playlistNames[x][1]}'][f'A{z+1}'] = finalList[x][z]
         # -> sheet name
         for y in range(len(playlistNames)):
             for z in range(len(playlistNames[y][4])):
                 workbook[f'{playlistNames[y][1]}'][f'A{z+1}'] = playlistNames[y][4][z]
+                workbook[f'{playlistNames[y][1]}'][f'B{z+2}'] = 100
         
         workbook.save(filename="./spotifyPlaylistData.xlsx")
 
@@ -128,10 +133,32 @@ def my_player():
         return redirect('/login')#if not redirect to login
     if int(time.time()) > session['expires_at']:#make sure the token hasnt expired
         return redirect('/refresh_token')#if it has redirect
-    playbackStateUrl = f"{API_BASE_URL}me/player"
-    playbackStateResponse = requests.get(url=playbackStateUrl,headers=get_headers(session['access_token']))
-    playbackStateJson = playbackStateResponse.json()
+    try:
+        playbackStateUrl = f"{API_BASE_URL}me/player"
+        playbackStateResponse = requests.get(url=playbackStateUrl,headers=get_headers(session['access_token']))
+        playbackStateJson = playbackStateResponse.json()
+        currentPlaylist = playbackStateJson['context']['external_urls']['spotify'].replace("https://open.spotify.com/playlist/","")
+        currentSong = playbackStateJson['item']['name']
+    except:
+        return "Turn on Player!"
     if playbackStateJson['is_playing']:
+        if os.path.exists("spotifyPlaylistData.xlsx"):
+            workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
+            counter = 1
+            for col in  workbook[currentPlaylist].iter_cols():
+                for cell in col:
+                    print(cell.value)
+                    if cell.value == currentSong:
+                        saveCell = cell.value
+                        break;
+                    else:
+                        counter += 1
+                if saveCell == currentSong:
+                    break
+        else:
+            return redirect("/playlists")
+        print(counter)
+        Data = (workbook[currentPlaylist][f"A{counter}"].value,workbook[currentPlaylist][f"B{counter}"].value,counter)
         headers = get_headers(session['access_token'])
         url = f"{API_BASE_URL}me/player/currently-playing"
         response = requests.get(url=url,headers=headers)
@@ -143,12 +170,14 @@ def my_player():
         playOrPause = "<a href='/pause'>Pause</a>"
         returnString = f"""
                     Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
+                    Stats: {Data[1]}<br>
                     <a href='/previous'>Prev</a> {playOrPause} <a href='/skip'>Skip</a>"""
     else:
         playOrPause = "<a href='/play'>Play</a>"
         returnString = f"Music Currently not playing! {playOrPause}"
                     
     return returnString
+    #?cell={Data[2]}
     #<img src='{currently_playing['item']['album']['images'][0]['url']}'>
     #currently_playing['item']['album']['images'][0]['url']
     #{currently_playing['item']['artists'][0]['name']}
