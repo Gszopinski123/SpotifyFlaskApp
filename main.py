@@ -1,3 +1,4 @@
+from calendar import c
 from codecs import replace_errors
 from email import header
 from fileinput import filename
@@ -147,7 +148,6 @@ def my_player():
             counter = 1
             for col in  workbook[currentPlaylist].iter_cols():
                 for cell in col:
-                    print(cell.value)
                     if cell.value == currentSong:
                         saveCell = cell.value
                         break;
@@ -157,8 +157,13 @@ def my_player():
                     break
         else:
             return redirect("/playlists")
-        print(counter)
-        Data = (workbook[currentPlaylist][f"A{counter}"].value,workbook[currentPlaylist][f"B{counter}"].value,counter)
+        wentBack = request.args.get("prev")
+        Data = [workbook[currentPlaylist][f"A{counter}"].value,int(workbook[currentPlaylist][f"B{counter}"].value),counter]
+        if wentBack == '1':
+            workbook[currentPlaylist][f"B{counter}"] = int(workbook[currentPlaylist][f"B{counter}"].value) + 1
+            Data[1] += 1
+            workbook.save(filename="./spotifyPlaylistData.xlsx")
+            return redirect("/player")
         headers = get_headers(session['access_token'])
         url = f"{API_BASE_URL}me/player/currently-playing"
         response = requests.get(url=url,headers=headers)
@@ -171,7 +176,7 @@ def my_player():
         returnString = f"""
                     Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
                     Stats: {Data[1]}<br>
-                    <a href='/previous'>Prev</a> {playOrPause} <a href='/skip'>Skip</a>"""
+                    <a href='/previous'>Prev</a> {playOrPause} <a href='/skip?name={currentSong}&playlist={currentPlaylist}'>Skip</a>"""
     else:
         playOrPause = "<a href='/play'>Play</a>"
         returnString = f"Music Currently not playing! {playOrPause}"
@@ -222,11 +227,26 @@ def previous_Song():
     url = f"{API_BASE_URL}me/player/previous"
     headers = get_headers(session['access_token'])
     response = requests.post(url=url,headers=headers)
-    return redirect("/player")
+    return redirect("/player?prev=1")
 
 
 @myApp.route('/skip')#this page is used to skip to the next song - Spotify Premium required
 def skip_Song():
+    currentSong = request.args.get("name")
+    currentPlaylist = request.args.get("playlist")
+    workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
+    counter = 1
+    for col in  workbook[currentPlaylist].iter_cols():
+        for cell in col:
+            if cell.value == currentSong:
+                saveCell = cell.value
+                break;
+            else:
+                counter += 1
+        if saveCell == currentSong:
+            break
+    workbook[currentPlaylist][f"B{counter}"] = workbook[currentPlaylist][f"B{counter}"].value -1
+    workbook.save(filename="./spotifyPlaylistData.xlsx")
     url = f"{API_BASE_URL}me/player/next"
     headers = get_headers(session['access_token'])
     response = requests.post(url=url,headers=headers)
