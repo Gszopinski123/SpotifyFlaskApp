@@ -1,19 +1,14 @@
-from calendar import c
-from codecs import replace_errors
-from email import header
-from fileinput import filename
-from turtle import title
-from weakref import finalize
+from venv import create
 from dotenv import load_dotenv
 import os
 import json
-import token
 from flask import Flask, jsonify, redirect,request,session
 import urllib
-from numpy import number
 import requests
 import time
 from openpyxl import Workbook, load_workbook
+from datetime import date
+import time
 myApp = Flask(__name__)
 load_dotenv()
 myApp.secret_key = os.getenv("SECRET_KEY")#for sessions
@@ -33,7 +28,24 @@ scopeDict = {"Images":["ugc-image-upload"],"Spotify Connect":["user-read-playbac
               "user-library-read"],"Users":["user-read-email","user-read-private"],"Open Access":["user-soa-link",
               "user-soa-unlink","soa-manage-entitlements","soa-manage-partner","soa-create-partner"]}
 
-
+def addToJson(songName):
+    if os.path.exists('SongData.json'):
+        pass
+    else:
+        with open('SongData.json','w') as fileWrite:
+            json.dump({},fileWrite)
+    with open('SongData.json','r+') as filePtr:
+        jsonFile = json.load(filePtr)
+        if songName in jsonFile:
+            pass
+        else:
+            jsonFile[songName] = {}
+            jsonFile[songName]["Playlists"] = []
+            jsonFile[songName]["Skipped"] = []
+            jsonFile[songName]["ReadableDate"] = []
+    with open("SongData.json",'w') as filePtr:
+        json.dump(jsonFile,filePtr)
+        
 def get_headers(sessionToken):
     headers = {
         "Authorization" : f"Bearer {sessionToken}"
@@ -163,6 +175,14 @@ def my_player():
             workbook[currentPlaylist][f"B{counter}"] = int(workbook[currentPlaylist][f"B{counter}"].value) + 1
             Data[1] += 1
             workbook.save(filename="./spotifyPlaylistData.xlsx")
+            with open('SongData.json','r') as filePtr:
+                jsonFile = json.load(filePtr)
+                lengthOfReadable = len(jsonFile[currentSong]['ReadableDate'])
+                lengthOfSkipped = len(jsonFile[currentSong]['Skipped'])
+                jsonFile[currentSong]['ReadableDate'].pop(lengthOfReadable-1)
+                jsonFile[currentSong]['Skipped'].pop(lengthOfSkipped-1)
+            with open('SongData.json','w') as filePtr:
+                json.dump(jsonFile,filePtr)
             return redirect("/player")
         headers = get_headers(session['access_token'])
         url = f"{API_BASE_URL}me/player/currently-playing"
@@ -172,6 +192,7 @@ def my_player():
         deviceResponse = requests.get(url=deviceUrl,headers=get_headers(session['access_token']))
         deviceJson = deviceResponse.json()
         deviceId = deviceJson['devices'][0]['id']
+        addToJson(currentSong)
         playOrPause = "<a href='/pause'>Pause</a>"
         returnString = f"""
                     Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
@@ -247,6 +268,13 @@ def skip_Song():
             break
     workbook[currentPlaylist][f"B{counter}"] = workbook[currentPlaylist][f"B{counter}"].value -1
     workbook.save(filename="./spotifyPlaylistData.xlsx")
+    with open("SongData.json",'r') as filePtr:
+        fileJson = json.load(filePtr)
+        fileJson[currentSong]["Skipped"].append(time.time())
+        string = str(date.today())
+        fileJson[currentSong]['ReadableDate'].append(string)
+    with open("SongData.json",'w') as filePtr:
+        json.dump(fileJson,filePtr)
     url = f"{API_BASE_URL}me/player/next"
     headers = get_headers(session['access_token'])
     response = requests.post(url=url,headers=headers)
