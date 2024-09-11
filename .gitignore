@@ -4,3 +4,5 @@
 *.txt
 #excel file
 *.xlsx
+#json files
+*.json
