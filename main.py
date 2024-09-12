@@ -44,13 +44,13 @@ def checkPlaylists(songName):
                     jsonFile[songName]['Playlists'][sheet] = 1
     with open('./SongData.json','w') as filePtr:
         json.dump(jsonFile,filePtr)
-def addToJson(songName):
+def addToJson(songName,pictureUrl):
     if os.path.exists('./SongData.json'):
         pass
     else:
         with open('./SongData.json','w') as fileWrite:
             json.dump({},fileWrite)
-    with open('./SongData.json','r+') as filePtr:
+    with open('./SongData.json','r+') as filePtr: 
         jsonFile = json.load(filePtr)
         if songName in jsonFile:
             pass
@@ -59,6 +59,7 @@ def addToJson(songName):
             jsonFile[songName]["Playlists"] = {}
             jsonFile[songName]["Skipped"] = []
             jsonFile[songName]["ReadableDate"] = {}
+            jsonFile[songName]["picture"] = pictureUrl
     with open("./SongData.json",'w') as filePtr:
         json.dump(jsonFile,filePtr)
         
@@ -208,13 +209,21 @@ def my_player():
         deviceResponse = requests.get(url=deviceUrl,headers=get_headers(session['access_token']))
         deviceJson = deviceResponse.json()
         deviceId = deviceJson['devices'][0]['id']
-        addToJson(currentSong)
+        addToJson(currentSong,currently_playing['item']['album']['images'][0]['url'])
         checkPlaylists(currentSong)
+        with open('SongData.json','r') as filePtr:
+            jsonFile = json.load(filePtr)
         playOrPause = "<a href='/pause'>Pause</a>"
-        returnString = f"""
-                    Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
-                    Stats: {Data[1]}<br>
-                    <a href='/previous'>Prev</a> {playOrPause} <a href='/skip?name={currentSong}&playlist={currentPlaylist}'>Skip</a>"""
+        returnString = f"""<!DOCTYPE html>
+                            <link rel=stylesheet href='../static/style.css'>
+                            <script>
+                            setInterval(function() {{
+                                location.reload();
+                                }}, 30000);
+                            </script>
+                    <h1>Currently Playing:</h1><img src='{jsonFile[currentSong]['picture']}'></img><br><p>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
+                    <a href='/previous'>Prev</a> {playOrPause} <a href='/skip?name={currentSong}&playlist={currentPlaylist}'>Skip</a><br>
+                    Stats: {Data[1]}</p>"""
     else:
         playOrPause = "<a href='/play'>Play</a>"
         returnString = f"Music Currently not playing! {playOrPause}"
