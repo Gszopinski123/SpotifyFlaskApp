@@ -1,3 +1,4 @@
+from operator import ge
 from venv import create
 from dotenv import load_dotenv
 import os
@@ -28,6 +29,21 @@ scopeDict = {"Images":["ugc-image-upload"],"Spotify Connect":["user-read-playbac
               "user-library-read"],"Users":["user-read-email","user-read-private"],"Open Access":["user-soa-link",
               "user-soa-unlink","soa-manage-entitlements","soa-manage-partner","soa-create-partner"]}
 
+def checkPlaylists(songName):
+    with open('SongData.json','r+') as filePtr:
+            jsonFile = json.load(filePtr)
+    workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
+    for sheet in workbook.sheetnames:
+        firstCol = workbook[sheet]['A']
+        genericCol = workbook[sheet]
+        for col in range(len(firstCol)):
+            if genericCol[f"A{col+1}"].value in jsonFile[songName]['Playlists']:
+                pass
+            else:
+                if genericCol[f"A{col+1}"].value == songName:
+                    jsonFile[songName]['Playlists'][sheet] = 1
+    with open('SongData.json','w') as filePtr:
+        json.dump(jsonFile,filePtr)
 def addToJson(songName):
     if os.path.exists('SongData.json'):
         pass
@@ -40,7 +56,7 @@ def addToJson(songName):
             pass
         else:
             jsonFile[songName] = {}
-            jsonFile[songName]["Playlists"] = []
+            jsonFile[songName]["Playlists"] = {}
             jsonFile[songName]["Skipped"] = []
             jsonFile[songName]["ReadableDate"] = []
     with open("SongData.json",'w') as filePtr:
@@ -193,6 +209,7 @@ def my_player():
         deviceJson = deviceResponse.json()
         deviceId = deviceJson['devices'][0]['id']
         addToJson(currentSong)
+        checkPlaylists(currentSong)
         playOrPause = "<a href='/pause'>Pause</a>"
         returnString = f"""
                     Currently Playing:<br>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
