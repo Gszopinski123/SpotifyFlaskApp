@@ -30,7 +30,7 @@ scopeDict = {"Images":["ugc-image-upload"],"Spotify Connect":["user-read-playbac
               "user-soa-unlink","soa-manage-entitlements","soa-manage-partner","soa-create-partner"]}
 
 def checkPlaylists(songName):
-    with open('SongData.json','r+') as filePtr:
+    with open('./SongData.json','r+') as filePtr:
             jsonFile = json.load(filePtr)
     workbook = load_workbook(filename="spotifyPlaylistData.xlsx")
     for sheet in workbook.sheetnames:
@@ -42,15 +42,15 @@ def checkPlaylists(songName):
             else:
                 if genericCol[f"A{col+1}"].value == songName:
                     jsonFile[songName]['Playlists'][sheet] = 1
-    with open('SongData.json','w') as filePtr:
+    with open('./SongData.json','w') as filePtr:
         json.dump(jsonFile,filePtr)
 def addToJson(songName):
-    if os.path.exists('SongData.json'):
+    if os.path.exists('./SongData.json'):
         pass
     else:
-        with open('SongData.json','w') as fileWrite:
+        with open('./SongData.json','w') as fileWrite:
             json.dump({},fileWrite)
-    with open('SongData.json','r+') as filePtr:
+    with open('./SongData.json','r+') as filePtr:
         jsonFile = json.load(filePtr)
         if songName in jsonFile:
             pass
@@ -58,8 +58,8 @@ def addToJson(songName):
             jsonFile[songName] = {}
             jsonFile[songName]["Playlists"] = {}
             jsonFile[songName]["Skipped"] = []
-            jsonFile[songName]["ReadableDate"] = []
-    with open("SongData.json",'w') as filePtr:
+            jsonFile[songName]["ReadableDate"] = {}
+    with open("./SongData.json",'w') as filePtr:
         json.dump(jsonFile,filePtr)
         
 def get_headers(sessionToken):
@@ -289,7 +289,10 @@ def skip_Song():
         fileJson = json.load(filePtr)
         fileJson[currentSong]["Skipped"].append(time.time())
         string = str(date.today())
-        fileJson[currentSong]['ReadableDate'].append(string)
+        if string in fileJson[currentSong]['ReadableDate']:
+            fileJson[currentSong]['ReadableDate'][string]+= 1
+        else:
+            fileJson[currentSong]['ReadableDate'][string] = 1
     with open("SongData.json",'w') as filePtr:
         json.dump(fileJson,filePtr)
     url = f"{API_BASE_URL}me/player/next"
