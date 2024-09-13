@@ -213,24 +213,42 @@ def my_player():
         checkPlaylists(currentSong)
         with open('SongData.json','r') as filePtr:
             jsonFile = json.load(filePtr)
-        javascriptGraph = """<script>
-                                src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"
-                                fetch('/data') 
-                                    .then((response) => response.json())
-                                    .then((json) => console.log(json))
+        canvasTag = '<div><canvas id="myChart"></canvas></div>'
+        javascriptGraph = f"""
+                            <script> 
+                            const ctx = document.getElementById('myChart');
+                             new Chart(ctx, {{
+                                            type: 'bar',
+                                            data: {{
+                                            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                                            datasets: [{{
+                                                label: '# of Votes',
+                                                data: [12, 19, 3, 5, 2, 3],
+                                                borderWidth: 1
+                                            }}]
+                                            }},
+                                            options: {{
+                                            scales: {{
+                                                y: {{
+                                                beginAtZero: true
+                                                }}
+                                            }}
+                                            }}
+                                    }});
                             </script>"""
         playOrPause = "<a href='/pause'>Pause</a>"
         returnString = f"""<!DOCTYPE html>
+                            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                             <link rel=stylesheet href='../static/style.css'>
                             <script>
                             setInterval(function() {{
                                 location.reload();
                                 }}, 30000);
                             </script>
-                            {javascriptGraph}
+                            
                     <h1>Currently Playing:</h1><img src='{jsonFile[currentSong]['picture']}'></img><br><p>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
                     <a href='/previous'>Prev</a> {playOrPause} <a href='/skip?name={currentSong}&playlist={currentPlaylist}'>Skip</a><br>
-                    Stats: {Data[1]}</p>"""
+                    Stats: {Data[1]}</p>{canvasTag}{javascriptGraph}"""
     else:
         playOrPause = "<a href='/play'>Play</a>"
         returnString = f"Music Currently not playing! {playOrPause}"
