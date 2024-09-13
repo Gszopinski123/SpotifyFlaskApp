@@ -213,6 +213,12 @@ def my_player():
         checkPlaylists(currentSong)
         with open('SongData.json','r') as filePtr:
             jsonFile = json.load(filePtr)
+        javascriptGraph = """<script>
+                                src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"
+                                fetch('/data') 
+                                    .then((response) => response.json())
+                                    .then((json) => console.log(json))
+                            </script>"""
         playOrPause = "<a href='/pause'>Pause</a>"
         returnString = f"""<!DOCTYPE html>
                             <link rel=stylesheet href='../static/style.css'>
@@ -221,6 +227,7 @@ def my_player():
                                 location.reload();
                                 }}, 30000);
                             </script>
+                            {javascriptGraph}
                     <h1>Currently Playing:</h1><img src='{jsonFile[currentSong]['picture']}'></img><br><p>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
                     <a href='/previous'>Prev</a> {playOrPause} <a href='/skip?name={currentSong}&playlist={currentPlaylist}'>Skip</a><br>
                     Stats: {Data[1]}</p>"""
@@ -235,7 +242,11 @@ def my_player():
     #{currently_playing['item']['artists'][0]['name']}
     #{currently_playing['item']['name']}
 
-
+@myApp.route("/data")
+def my_SongData():
+    with open("./SongData.json",'r') as filePtr:
+        jsonFile = json.load(filePtr)
+    return jsonFile
 @myApp.route('/play')
 def start_play():
     url = f"{API_BASE_URL}me/player/play"
