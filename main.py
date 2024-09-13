@@ -196,7 +196,10 @@ def my_player():
                 jsonFile = json.load(filePtr)
                 lengthOfReadable = len(jsonFile[currentSong]['ReadableDate'])
                 lengthOfSkipped = len(jsonFile[currentSong]['Skipped'])
-                jsonFile[currentSong]['ReadableDate'].pop(lengthOfReadable-1)
+                if jsonFile[currentSong]['ReadableDate'][str(date.today())] == 1:
+                    jsonFile[currentSong]['ReadableDate'].pop(str(date.today()))
+                else:
+                    jsonFile[currentSong]['ReadableDate'][str(date.today())]-= 1
                 jsonFile[currentSong]['Skipped'].pop(lengthOfSkipped-1)
             with open('SongData.json','w') as filePtr:
                 json.dump(jsonFile,filePtr)
@@ -213,17 +216,31 @@ def my_player():
         checkPlaylists(currentSong)
         with open('SongData.json','r') as filePtr:
             jsonFile = json.load(filePtr)
+            labels = []
+            label = "# of Times Skipped"
+            dataDates = []
+        if len(jsonFile[currentSong]['ReadableDate']) == 0:
+            pass
+        else:
+            for x in jsonFile[currentSong]['ReadableDate'].keys():
+                dataDates.append(x)
+            for y in dataDates:
+                labels.append(jsonFile[currentSong]['ReadableDate'][y])
+            print(labels)
+            print(dataDates)
+        
         canvasTag = '<div><canvas id="myChart"></canvas></div>'
         javascriptGraph = f"""
                             <script> 
+                            
                             const ctx = document.getElementById('myChart');
                              new Chart(ctx, {{
                                             type: 'bar',
                                             data: {{
-                                            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                                            labels: {dataDates},
                                             datasets: [{{
-                                                label: '# of Votes',
-                                                data: [12, 19, 3, 5, 2, 3],
+                                                label: '{label}',
+                                                data:{labels},
                                                 borderWidth: 1
                                             }}]
                                             }},
