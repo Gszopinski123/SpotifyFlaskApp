@@ -228,9 +228,19 @@ def my_player():
                 labels.append(jsonFile[currentSong]['ReadableDate'][y])
             print(labels)
             print(dataDates)
-        
+        playlistName = []
+        for x in jsonFile[currentSong]['Playlists'].keys():
+            playlistResponse = requests.get(url=f"{API_BASE_URL}playlists/{x}",headers=get_headers(session['access_token']))
+            playlistsJsonResponse = playlistResponse.json()
+            playlistName += [playlistsJsonResponse['name']]
+        stringOfPlaylists = ''
+        for y in range(len(playlistName)):
+            if (y == 0):
+                stringOfPlaylists += f"{playlistName[y]}"
+            stringOfPlaylists += f", {playlistName[y]}"
         canvasTag = '<div><canvas id="myChart"></canvas></div>'
         javascriptGraph = f"""
+                            
                             <script> 
                             
                             const ctx = document.getElementById('myChart');
@@ -266,7 +276,7 @@ def my_player():
                             
                     <h1>Currently Playing:</h1><img src='{jsonFile[currentSong]['picture']}'></img><br><p>Artist: {currently_playing['item']['artists'][0]['name']} - Song: {currently_playing['item']['name']}<br>
                     <a href='/previous'>Prev</a> {playOrPause} <a href='/skip?name={currentSong}&playlist={currentPlaylist}'>Skip</a><br>
-                    Stats: {Data[1]}</p>{canvasTag}{javascriptGraph}"""
+                    Stats: {Data[1]}</p><h2>Playlists</h2><p1>{stringOfPlaylists}</p1><h2>Skipping Statistics</h2>{canvasTag}{javascriptGraph}"""
     else:
         playOrPause = "<a href='/play'>Play</a>"
         returnString = f"Music Currently not playing! {playOrPause}"
