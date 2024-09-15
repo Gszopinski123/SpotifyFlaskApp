@@ -1,5 +1,4 @@
 # SpotifyFlaskApp
-
-
-<p>1. add a section where you can see what is currently playing!</p>
-<p>2. add a excel file to keep track of statistics for each song played through the player</p>
+Need to add a list of playlist so user can change playlists.
+I also need to add a removal option 
+and fix the description of the project as well as add a proper README file.
