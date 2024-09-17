@@ -237,7 +237,7 @@ def my_player():
         for y in range(len(playlistName)):
             if (y == 0):
                 stringOfPlaylists += f"{playlistName[y]}"
-            stringOfPlaylists += f", {playlistName[y]}"
+            stringOfPlaylists += f"{playlistName[y]}"
         canvasTag = '<div><canvas id="myChart"></canvas></div>'
         javascriptGraph = f"""
                             
